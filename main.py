@@ -5,8 +5,7 @@ import pandas as pd
 
 
 class resume:
-    def __init__(self, title, specialization, salary, age, employment, work_schedule, experience_years,
-                 experience_month, citizenship, sex):
+    def __init__(self, title, specialization, salary, age, employment, work_schedule, experience_years, experience_month, citizenship, sex):
         self.title = title
         self.specialization = specialization
         self.salary = salary
@@ -34,9 +33,9 @@ def parse_resume(http, url):
     res = http.request('GET', url)
     soup = BeautifulSoup(res.data, "html.parser")
 
-    resume_experience = soup.find('span',
-                                  attrs={'class': 'resume-block__title-text resume-block__title-text_sub'}).find_all(
-        'span')
+    resume_experience = soup.find('span', attrs={
+                                  'class': 'resume-block__title-text resume-block__title-text_sub'}).find_all('span')
+
     try:
         resume_title = soup.find(
             'span', attrs={'class': 'resume-block__title-text'}).text
@@ -74,11 +73,11 @@ def parse_resume(http, url):
         resume_work_schedule = None
 
     try:
-        resume_experiences = soup.find(
+        resume_employment = soup.find(
             'div', attrs={'class': 'resume-block-item-gap'}).find('p').text
-        resume_experiences = ' '.join(resume_experiences.split()[1:])
+        resume_employment = ' '.join(resume_employment.split()[1:])
     except:
-        resume_experiences = None
+        resume_employment = None
 
     try:
         resume_age = soup.find(
@@ -98,17 +97,14 @@ def parse_resume(http, url):
     except:
         resume_specialization = None
 
-    return resume(resume_title, resume_specialization, resume_salary, resume_age, resume_experiences,
-                  resume_work_schedule, resume_experience_year, resume_experience_month, resume_citizenship,
-                  resume_gender)
+    return resume(resume_title, resume_specialization, resume_salary, resume_age, resume_employment, resume_work_schedule, resume_experience_year, resume_experience_month, resume_citizenship, resume_gender)
 
 
 def parse_resumes(search_text):
     http = urllib3.PoolManager()
     resumes = []
     for i in range(0, get_max_page(http, search_text)):
-        url = f"https://hh.kz/search/resume?text={search_text}&area=40&isDefaultArea=true&pos=full_text&logic=normal" \
-              f"&exp_period=all_time&currency_code=KZT&ored_clusters=true&order_by=relevance&page={i}"
+        url = f"https://hh.kz/search/resume?text={search_text}&area=40&isDefaultArea=true&pos=full_text&logic=normal&exp_period=all_time&currency_code=KZT&ored_clusters=true&order_by=relevance&page={i}"
         res = http.request('GET', url)
         soup = BeautifulSoup(res.data, "html.parser")
         resume_links = soup.find_all('a', attrs={'class', 'serp-item__title'})
@@ -116,25 +112,18 @@ def parse_resumes(search_text):
             href = "https://hh.kz" + resume_link.get("href")
             # print(href)
             resumes.append(parse_resume(http, href))
-    return resumes
-
-
-if __name__ == "__main__":
-    search_text = "python"
-    http = urllib3.PoolManager()
-    print("Loading...")
-    resumes = parse_resumes(search_text)
-    print("Done!")
     with open('CV.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Title", "Specialization", "Salary", "Age", "Employment",
                         "Work Schedule", "Experience Year", "Experience Month", "Citizenship", "Sex"])
         for resume in resumes:
-            writer.writerow([resume.title,
-                             resume.specialization, resume.salary, resume.age, resume.employment, resume.work_schedule, resume.experience_years,
-                             resume.experience_month, resume.citizenship, resume.sex])
+            writer.writerow([resume.title, resume.specialization, resume.salary, resume.age, resume.employment,
+                            resume.work_schedule, resume.experience_years, resume.experience_month, resume.citizenship, resume.sex])
     df = pd.read_csv('CV.csv')
     print(df.to_string())
+    return resumes
 
-# self, title, specialization, salary, age, employment, work_schedule, experience_years,
-#                  experience_month, citizenship, sex
+
+if __name__ == "__main__":
+    search_text = input("Search for: ")
+    resumes = parse_resumes(search_text)
