@@ -1,8 +1,13 @@
 import csv
 import urllib3
+import re
 from bs4 import BeautifulSoup
 import pandas as pd
+import currency_converter
 
+kzt = currency_converter.convertTenge()
+rub = currency_converter.convertRuble()
+eur = currency_converter.convertEuro()
 
 class resume:
     def __init__(self, title, specialization, salary, age, employment, work_schedule, experience_years, experience_month, citizenship, sex):
@@ -16,6 +21,19 @@ class resume:
         self.experience_month = experience_month
         self.citizenship = citizenship
         self.sex = sex
+
+def parse_number(text):
+ 	return int(re.search(r'\d+', text.replace(" ", "").replace("\t", "").replace("\n", "")).group())
+
+def convert_salary(text):
+    num = parse_number(text)
+    if ('K' in text): #tenge
+        return num / kzt
+    elif ('р' in text): # ruble
+        return num / rub
+    elif ('E' in text): # euro
+        return num /eur
+    return num
 
 
 def get_max_page(http, search_text):
@@ -96,6 +114,9 @@ def parse_resume(http, url):
             'li', attrs={'class': 'resume-block__specialization'})])
     except:
         resume_specialization = None
+
+    # Convert Salary 
+    resume_salary = convert_salary(resume_salary)
 
     return resume(resume_title, resume_specialization, resume_salary, resume_age, resume_employment, resume_work_schedule, resume_experience_year, resume_experience_month, resume_citizenship, resume_gender)
 
